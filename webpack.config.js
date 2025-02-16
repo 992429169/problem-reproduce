@@ -1,6 +1,24 @@
 const path = require('path');
+const os = require('os');
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+getCpuCoresNum = () => {
+    return os.cpus()?.length || 1;
+};
+
+getThreadLoader = ({ workersRatio = 1 / 3, ...otherOptions } = {}) => {
+    return {
+        loader: 'thread-loader',
+        options: {
+            workers: Math.max(Math.round(getCpuCoresNum() * workersRatio) - 1, 1),
+            ...otherOptions,
+        },
+    };
+};
+
+const threadLoader = getThreadLoader({ workersRatio: 2 / 3 });
 
 const sassLoader = {
     loader: 'sass-loader',
@@ -14,6 +32,7 @@ const sassLoader = {
 const getStyleLoaders = (preProcessor) => {
     return [
         MiniCssExtractPlugin.loader,
+        getThreadLoader({ workersRatio: 2 / 3 }),
         {
             loader: 'css-loader',
             options: {
@@ -93,6 +112,9 @@ module.exports = {
             filename: 'css/[name].css',
             chunkFilename: 'css/[name].css',
         }),
+        new HtmlWebpackPlugin({
+            template: './index.html',
+        }),
     ],
     mode: 'production',
     resolveLoader: {
@@ -113,5 +135,10 @@ module.exports = {
         runtimeChunk: {
             name: 'react_webpack_runtime',
         },
+    },
+    devServer: {
+        static: './dist',
+        open: true,
+        port: 3010,
     },
 };
